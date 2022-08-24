@@ -1,12 +1,12 @@
 mod controllers {
-    mod user_controller;
+    pub mod user_controller;
 }
 mod services {
-    mod user_service;
+    pub mod user_service;
 }
 mod models {
-    mod user;
+    pub mod user;
 }
 mod daos {
-    mod user_dao;
+    pub mod user_dao;
 }
