@@ -3,9 +3,8 @@ use error_stack::{IntoReport, ResultExt};
 use hearthstone_backend::controllers::user_controller;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
-use tracing::{event, instrument, Level};
+use tracing::{event, Level};
 
-#[instrument]
 #[tokio::main]
 async fn main() {
     if std::env::var_os("RUST_LOG").is_none() {
@@ -19,7 +18,7 @@ async fn main() {
         .await
         .report()
         .attach_printable("Unable to connect to postgres database")
-        .map_err(|e| {
+        .unwrap_or_else(|e| {
             event!(Level::ERROR, "{e:?}");
             std::process::exit(101)
         });
@@ -27,6 +26,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .route("/users", get(user_controller::get_all_users))
+        .route("/users/:id", get(user_controller::get_user_by_id))
         .layer(Extension(pool))
         .layer(TraceLayer::new_for_http());
 
