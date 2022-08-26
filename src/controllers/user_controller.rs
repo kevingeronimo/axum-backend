@@ -2,9 +2,9 @@ use crate::{error, services::user_service};
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
 use error_stack::{IntoReport, ResultExt};
 use sqlx::PgPool;
-use tracing::{event, instrument, Level};
+use tracing::{event, Level, instrument};
 
-#[instrument]
+#[instrument(skip_all)]
 pub async fn get_all_users(
     Extension(pool): Extension<PgPool>,
 ) -> Result<impl IntoResponse, error::Error> {
@@ -25,7 +25,7 @@ pub async fn get_all_users(
     }
 }
 
-#[instrument]
+#[instrument(skip_all, fields(id=id))]
 pub async fn get_user_by_id(
     Path(id): Path<i32>,
     Extension(pool): Extension<PgPool>,
