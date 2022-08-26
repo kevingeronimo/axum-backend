@@ -10,3 +10,8 @@ axum = "0.5.15"
 tokio = { version = "1.20.1", features = ["full"] }
 sqlx = { version = "0.6.1", features = [ "runtime-tokio-rustls", "postgres" ] }
 serde = "1.0.144"
+serde_json = "1.0.85"
+tracing = "0.1.36"
+tracing-subscriber = { version = "0.3.15", features = ["env-filter"]}
+error-stack = "0.1.1"
+tower-http = { version = "0.3.4", features = ["trace"] }
