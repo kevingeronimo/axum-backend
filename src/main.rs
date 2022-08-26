@@ -1,21 +1,15 @@
 use axum::{routing::get, Extension, Router};
 use error_stack::{IntoReport, ResultExt};
-use hearthstone_backend::{
-    controllers::user_controller,
-    error
-};
+use hearthstone_backend::controllers::user_controller;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
-use tracing::{Level, event, instrument};
+use tracing::{event, instrument, Level};
 
 #[instrument]
 #[tokio::main]
 async fn main() {
     if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var(
-            "RUST_LOG",
-            "hearthstone_backend=debug,tower_http=debug",
-        )
+        std::env::set_var("RUST_LOG", "hearthstone_backend=debug,tower_http=debug")
     }
     tracing_subscriber::fmt::init();
 
@@ -41,5 +35,4 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-
 }

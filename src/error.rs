@@ -1,6 +1,6 @@
-use std::{error::Error as StdError, fmt, process::{Termination, self}};
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
+use std::{error::Error as StdError, fmt};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Error {
