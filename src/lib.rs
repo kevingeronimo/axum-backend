@@ -10,3 +10,4 @@ pub mod models {
 pub mod daos {
     pub mod user_dao;
 }
+pub mod error;
