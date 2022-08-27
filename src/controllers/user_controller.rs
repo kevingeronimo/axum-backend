@@ -2,27 +2,23 @@ use crate::{error, services::user_service};
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
 use error_stack::{IntoReport, ResultExt};
 use sqlx::PgPool;
-use tracing::{event, Level, instrument};
+use tracing::{event, instrument, Level};
 
 #[instrument(skip_all)]
 pub async fn get_all_users(
     Extension(pool): Extension<PgPool>,
 ) -> Result<impl IntoResponse, error::Error> {
-    let us = user_service::UserService::new(&pool);
-    let users_result = us
-        .get_all_users()
+    let users = user_service::UserService::get_all_users(&pool)
         .await
         .report()
         .attach_printable("Could not retrieve all users")
-        .change_context(error::Error::InternalServerError);
-
-    match users_result {
-        Ok(users) => Ok((StatusCode::OK, Json(users))),
-        Err(e) => {
+        .change_context(error::Error::InternalServerError)
+        .map_err(|e| {
             event!(Level::ERROR, "{e:?}");
-            Err(*e.current_context())
-        }
-    }
+            *e.current_context()
+        })?;
+
+    Ok((StatusCode::OK, Json(users)))
 }
 
 #[instrument(skip_all, fields(id=id))]
@@ -30,19 +26,15 @@ pub async fn get_user_by_id(
     Path(id): Path<i32>,
     Extension(pool): Extension<PgPool>,
 ) -> Result<impl IntoResponse, error::Error> {
-    let us = user_service::UserService::new(&pool);
-    let user_result = us
-        .get_user_by_id(id)
+    let user = user_service::UserService::get_user_by_id(id, &pool)
         .await
         .report()
         .attach_printable(format!("Could not find user with id={id}"))
-        .change_context(error::Error::UserNotFound);
-
-    match user_result {
-        Ok(user) => Ok((StatusCode::OK, Json(user))),
-        Err(e) => {
+        .change_context(error::Error::UserNotFound)
+        .map_err(|e| {
             event!(Level::ERROR, "{e:?}");
-            Err(*e.current_context())
-        }
-    }
+            *e.current_context()
+        })?;
+
+    Ok((StatusCode::OK, Json(user)))
 }

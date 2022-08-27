@@ -7,7 +7,4 @@ pub mod services {
 pub mod models {
     pub mod user;
 }
-pub mod daos {
-    pub mod user_dao;
-}
 pub mod error;
