@@ -1,4 +1,4 @@
-use axum::{routing::get, Extension, Router};
+use axum::{routing::get, Router};
 use error_stack::{IntoReport, ResultExt};
 use hearthstone_backend::controllers::user_controller;
 use sqlx::postgres::PgPoolOptions;
@@ -23,11 +23,10 @@ async fn main() {
             std::process::exit(101)
         });
 
-    let app = Router::new()
+    let app = Router::with_state(pool)
         .route("/", get(|| async { "Hello, World!" }))
         .route("/users", get(user_controller::get_all_users))
         .route("/users/:id", get(user_controller::get_user_by_id))
-        .layer(Extension(pool))
         .layer(TraceLayer::new_for_http());
 
     // run it with hyper on localhost:3000
