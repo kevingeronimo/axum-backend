@@ -24,6 +24,13 @@ impl User {
             .await
     }
 
+    pub async fn get_by_username(username: String, pool: &PgPool) -> Result<User, Error> {
+        sqlx::query_as::<_, User>("SELECT * FROM users WHERE username=$1")
+            .bind(username)
+            .fetch_one(pool)
+            .await
+    }
+
     pub async fn create(user: UserDto, pool: &PgPool) -> Result<User, Error> {
         let sql = "
             INSERT INTO users (username, password)

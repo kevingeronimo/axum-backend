@@ -7,6 +7,8 @@ pub enum Error {
     BadRequest,
     UserNotFound,
     InternalServerError,
+    BcryptError,
+    TokioRecvError
 }
 
 impl fmt::Display for Error {
@@ -20,11 +22,11 @@ impl StdError for Error {}
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let (status, error_message) = match self {
-            Self::InternalServerError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
-            }
             Self::BadRequest => (StatusCode::BAD_REQUEST, "Bad Request"),
             Self::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found"),
+            _ => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
+            }
         };
         (status, Json(json!({ "error": error_message }))).into_response()
     }

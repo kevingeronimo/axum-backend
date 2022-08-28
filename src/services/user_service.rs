@@ -12,6 +12,10 @@ impl UserService {
         User::get_by_id(id, pool).await
     }
 
+    pub async fn get_user_by_username(username: String, pool: &PgPool) -> Result<User, Error> {
+        User::get_by_username(username, pool).await
+    }
+
     pub async fn create_user(user: UserDto, pool: &PgPool) -> Result<User, Error> {
         User::create(user, pool).await
     }
