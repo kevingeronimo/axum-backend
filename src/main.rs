@@ -1,6 +1,9 @@
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use error_stack::{IntoReport, ResultExt};
-use hearthstone_backend::controllers::user_controller;
+use hearthstone_backend::controllers::auth_controller;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
 use tracing::{event, Level};
@@ -25,11 +28,8 @@ async fn main() {
 
     let app = Router::with_state(pool)
         .route("/", get(|| async { "Hello, World!" }))
-        .route(
-            "/users",
-            get(user_controller::get_all_users).post(user_controller::register),
-        )
-        .route("/users/:id", get(user_controller::get_user_by_id))
+        .route("/login", post(auth_controller::login))
+        .route("/register", post(auth_controller::register))
         .layer(TraceLayer::new_for_http());
 
     // run it with hyper on localhost:3000

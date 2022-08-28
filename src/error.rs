@@ -8,9 +8,10 @@ pub type Result<T> = error_stack::Result<T, self::Error>;
 pub enum Error {
     BadRequest,
     UserNotFound,
-    InternalServerError,
     BcryptError,
     TokioRecvError,
+    WrongCredentials,
+    SqlxError
 }
 
 impl fmt::Display for Error {
@@ -24,6 +25,7 @@ impl StdError for Error {}
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let (status, error_message) = match self {
+            Self::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
             Self::BadRequest => (StatusCode::BAD_REQUEST, "Bad Request"),
             Self::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found"),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error"),

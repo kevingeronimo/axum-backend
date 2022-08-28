@@ -1,13 +1,14 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{Error, PgPool};
 
-use crate::dto::UserDto;
+use crate::dto::RegisterDto;
 
 #[derive(sqlx::FromRow, Deserialize, Serialize)]
 pub struct User {
-    id: i32,
-    username: String,
-    password: String,
+    pub id: i32,
+    pub username: String,
+    #[serde(skip_serializing)]
+    pub password: String,
 }
 
 impl User {
@@ -24,14 +25,14 @@ impl User {
             .await
     }
 
-    pub async fn get_by_username(username: String, pool: &PgPool) -> Result<User, Error> {
+    pub async fn get_by_username(username: &str, pool: &PgPool) -> Result<User, Error> {
         sqlx::query_as::<_, User>("SELECT * FROM users WHERE username=$1")
             .bind(username)
             .fetch_one(pool)
             .await
     }
 
-    pub async fn create(user: UserDto, pool: &PgPool) -> Result<User, Error> {
+    pub async fn create(dto: RegisterDto, pool: &PgPool) -> Result<User, Error> {
         let sql = "
             INSERT INTO users (username, password)
             VALUES ($1, $2)
@@ -39,8 +40,8 @@ impl User {
             ";
 
         sqlx::query_as::<_, User>(sql)
-            .bind(user.username)
-            .bind(user.password)
+            .bind(dto.username)
+            .bind(dto.password)
             .fetch_one(pool)
             .await
     }

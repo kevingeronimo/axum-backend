@@ -1,8 +1,8 @@
 pub mod controllers {
-    pub mod user_controller;
+    pub mod auth_controller;
 }
 pub mod services {
-    pub mod user_service;
+    pub mod auth_service;
 }
 pub mod models {
     pub mod user;
