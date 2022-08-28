@@ -1,4 +1,4 @@
-use crate::{error, services::user_service};
+use crate::{dtos::user_dto::UserDto, error, services::user_service};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -33,6 +33,24 @@ pub async fn get_user_by_id(
         .await
         .report()
         .attach_printable(format!("Could not find user with id={id}"))
+        .change_context(error::Error::UserNotFound)
+        .map_err(|e| {
+            event!(Level::ERROR, "{e:?}");
+            *e.current_context()
+        })?;
+
+    Ok((StatusCode::OK, Json(user)))
+}
+
+#[instrument(skip_all)]
+pub async fn register(
+    State(pool): State<PgPool>,
+    Json(user): Json<UserDto>,
+) -> Result<impl IntoResponse, error::Error> {
+    let user = user_service::UserService::create_user(user, &pool)
+        .await
+        .report()
+        .attach_printable("Could not create user")
         .change_context(error::Error::UserNotFound)
         .map_err(|e| {
             event!(Level::ERROR, "{e:?}");

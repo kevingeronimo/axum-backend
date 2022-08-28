@@ -25,7 +25,10 @@ async fn main() {
 
     let app = Router::with_state(pool)
         .route("/", get(|| async { "Hello, World!" }))
-        .route("/users", get(user_controller::get_all_users))
+        .route(
+            "/users",
+            get(user_controller::get_all_users).post(user_controller::register),
+        )
         .route("/users/:id", get(user_controller::get_user_by_id))
         .layer(TraceLayer::new_for_http());
 
