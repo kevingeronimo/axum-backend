@@ -7,7 +7,5 @@ pub mod services {
 pub mod models {
     pub mod user;
 }
-pub mod dtos {
-    pub mod user_dto;
-}
+pub mod dto;
 pub mod error;

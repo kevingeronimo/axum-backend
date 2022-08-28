@@ -1,4 +1,4 @@
-use crate::{models::user::User, dtos::user_dto::UserDto};
+use crate::{models::user::User, dto::UserDto};
 use sqlx::{Error, PgPool};
 
 pub struct UserService;

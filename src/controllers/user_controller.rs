@@ -1,4 +1,4 @@
-use crate::{dtos::user_dto::UserDto, error, services::user_service};
+use crate::{dto::UserDto, error, services::user_service};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
