@@ -8,7 +8,7 @@ pub mod models {
     pub mod user;
 }
 pub mod utils {
-    pub mod encryption;
+    pub mod bcrypt_hash;
 }
 pub mod dto;
 pub mod error;

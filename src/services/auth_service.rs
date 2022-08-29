@@ -1,6 +1,6 @@
 use crate::dto::RegisterDto;
 use crate::error::{Error, Result};
-use crate::{dto::LoginDto, models::user::User, utils::encryption};
+use crate::{dto::LoginDto, models::user::User, utils::bcrypt_hash};
 use error_stack::{IntoReport, Report, ResultExt};
 use sqlx::PgPool;
 
@@ -12,7 +12,7 @@ impl AuthService {
             .await
             .report()
             .change_context(Error::WrongCredentials)?;
-        if encryption::verify_password(dto.password, user.password.to_owned()).await? {
+        if bcrypt_hash::verify_password(dto.password, user.password.to_owned()).await? {
             Ok(user)
         } else {
             Err(Report::new(Error::WrongCredentials).attach_printable("Password is incorrect"))
@@ -21,7 +21,7 @@ impl AuthService {
 
     pub async fn sign_up(dto: RegisterDto, pool: &PgPool) -> Result<User> {
         // password is dropped after hashing.
-        let password = encryption::hash_password(dto.password).await?;
+        let password = bcrypt_hash::hash_password(dto.password).await?;
         let dto = RegisterDto {
             username: dto.username,
             password,

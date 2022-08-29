@@ -25,10 +25,12 @@ pub async fn register(
     State(pool): State<PgPool>,
     Json(register_dto): Json<RegisterDto>,
 ) -> Result<impl IntoResponse, error::Error> {
-    let user = AuthService::sign_up(register_dto, &pool).await.map_err(|e| {
-        event!(Level::ERROR, "{e:?}");
-        *e.current_context()
-    })?;
+    let user = AuthService::sign_up(register_dto, &pool)
+        .await
+        .map_err(|e| {
+            event!(Level::ERROR, "{e:?}");
+            *e.current_context()
+        })?;
 
     Ok((StatusCode::OK, Json(user)))
 }
