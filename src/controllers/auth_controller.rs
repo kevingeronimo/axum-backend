@@ -38,5 +38,10 @@ pub async fn register(
             *e.current_context()
         })?;
 
-    Ok((StatusCode::OK, Json(user)))
+        let token = jwt::sign(user.id).map_err(|e| {
+            event!(Level::ERROR, "{e:?}");
+            *e.current_context()
+        })?;
+    
+        Ok((StatusCode::CREATED, Json(AuthBodyDto::new(token))))
 }

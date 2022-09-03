@@ -1,7 +1,7 @@
 use crate::dto::RegisterDto;
 use crate::error::{Error, Result};
 use crate::{dto::LoginDto, models::user::User, utils::bcrypt_hash};
-use error_stack::{IntoReport, Report, ResultExt};
+use error_stack::{IntoReport, ResultExt, report};
 use sqlx::PgPool;
 
 pub struct AuthService;
@@ -16,11 +16,16 @@ impl AuthService {
         if bcrypt_hash::verify_password(dto.password, user.password.to_owned()).await? {
             Ok(user)
         } else {
-            Err(Report::new(Error::WrongCredentials).attach_printable("Password is incorrect"))
+            Err(report!(Error::WrongCredentials))
         }
     }
 
     pub async fn sign_up(dto: RegisterDto, pool: &PgPool) -> Result<User> {
+
+        if User::get_by_username(&dto.username, pool).await.is_ok() {
+            return Err(report!(Error::DuplicateUserName));
+        }
+
         // password is dropped after hashing.
         let password = bcrypt_hash::hash_password(dto.password).await?;
         let dto = RegisterDto {
