@@ -17,3 +17,6 @@ error-stack = "0.1.1"
 tower-http = { version = "0.3.4", features = ["trace"] }
 bcrypt = "0.13.0"
 rayon = "1.5.3"
+chrono = "0.4.22"
+jsonwebtoken = "8.1.1"
+once_cell = "1.14.0"

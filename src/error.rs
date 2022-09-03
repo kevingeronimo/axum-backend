@@ -6,7 +6,8 @@ pub type Result<T> = error_stack::Result<T, self::Error>;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Error {
-    BadRequest,
+    TokenCreation,
+    InvalidToken,
     UserNotFound,
     BcryptError,
     TokioRecvError,
@@ -26,7 +27,7 @@ impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let (status, error_message) = match self {
             Self::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
-            Self::BadRequest => (StatusCode::BAD_REQUEST, "Bad Request"),
+            Self::InvalidToken => (StatusCode::BAD_REQUEST, "Bad Request"),
             Self::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found"),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error"),
         };
