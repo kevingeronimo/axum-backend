@@ -1,7 +1,8 @@
 use crate::{
-    dto::{LoginDto, RegisterDto},
+    dto::{LoginDto, RegisterDto, AuthBodyDto},
     error,
     services::auth_service::AuthService,
+    utils::jwt,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use sqlx::PgPool;
@@ -17,7 +18,12 @@ pub async fn login(
         *e.current_context()
     })?;
 
-    Ok((StatusCode::OK, Json(user)))
+    let token = jwt::sign(user.id).map_err(|e| {
+        event!(Level::ERROR, "{e:?}");
+        *e.current_context()
+    })?;
+
+    Ok(Json(AuthBodyDto::new(token)))
 }
 
 #[instrument(skip_all)]
