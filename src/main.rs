@@ -3,28 +3,34 @@ use axum::{
     Router,
 };
 use error_stack::{IntoReport, ResultExt};
-use hearthstone_backend::controllers::auth_controller;
+use hearthstone_backend::{
+    controllers::auth_controller,
+    error::{Error, Result},
+};
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
-use tracing::{event, Level};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
-async fn main() {
-    if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", "hearthstone_backend=debug,tower_http=debug")
-    }
-    tracing_subscriber::fmt::init();
+async fn main() -> Result<()> {
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG")
+                .unwrap_or_else(|_| "hearthstone_backend=debug,tower_http=debug".into()),
+        ))
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    let db_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://user:pass@postgres_container/postgres".to_string());
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect("postgres://user:pass@postgres_container/postgres")
+        .connect(&db_url)
         .await
         .report()
-        .attach_printable("Unable to connect to postgres database")
-        .unwrap_or_else(|e| {
-            event!(Level::ERROR, "{e:?}");
-            std::process::exit(101)
-        });
+        .change_context(Error::SqlxError)
+        .attach_printable("Unable to connect to database")?;
 
     let app = Router::with_state(pool)
         .route("/", get(|| async { "Hello, World!" }))
@@ -37,4 +43,6 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+
+    Ok(())
 }

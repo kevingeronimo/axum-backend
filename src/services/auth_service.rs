@@ -11,7 +11,8 @@ impl AuthService {
         let user = User::get_by_username(&dto.username, pool)
             .await
             .report()
-            .change_context(Error::WrongCredentials)?;
+            .change_context(Error::UserNotFound)
+            .attach_printable(format!("No user with username = \"{}\"", dto.username))?;
         if bcrypt_hash::verify_password(dto.password, user.password.to_owned()).await? {
             Ok(user)
         } else {
