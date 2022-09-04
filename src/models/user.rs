@@ -5,7 +5,7 @@ use crate::dto::RegisterDto;
 
 #[derive(sqlx::FromRow, Deserialize, Serialize)]
 pub struct User {
-    pub id: i32,
+    pub id: i64,
     pub username: String,
     #[serde(skip_serializing)]
     pub password: String,

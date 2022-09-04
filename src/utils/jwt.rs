@@ -27,13 +27,13 @@ impl Keys {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Claims {
-    pub sub: i32,
+    pub sub: i64,
     pub exp: i64,
     pub iat: i64,
 }
 
 impl Claims {
-    pub fn new(id: i32) -> Self {
+    pub fn new(id: i64) -> Self {
         let iat = Utc::now();
         let exp = iat + Duration::hours(24);
 
@@ -45,7 +45,7 @@ impl Claims {
     }
 }
 
-pub fn sign(id: i32) -> Result<String> {
+pub fn sign(id: i64) -> Result<String> {
     let token = jsonwebtoken::encode(
         &Header::default(),
         &Claims::new(id),
