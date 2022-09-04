@@ -2,7 +2,7 @@ use crate::{
     dto::{LoginDto, RegisterDto, AuthBodyDto},
     error,
     services::auth_service::AuthService,
-    utils::jwt,
+    utils::jwt, extractor::Claims,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use sqlx::PgPool;
@@ -44,4 +44,12 @@ pub async fn register(
         })?;
     
         Ok((StatusCode::CREATED, Json(AuthBodyDto::new(token))))
+}
+
+pub async fn protected(claims: Claims) -> Result<String, error::Error> {
+    // Send the protected data to the user
+    Ok(format!(
+        "Welcome to the protected area :)\nYour data:\n{:?}",
+        claims
+    ))
 }

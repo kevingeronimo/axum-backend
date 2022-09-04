@@ -29,7 +29,7 @@ impl IntoResponse for Error {
         let (status, error_message) = match self {
             Self::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
             Self::DuplicateUserName => (StatusCode::BAD_REQUEST, "Username already taken"),
-            Self::InvalidToken => (StatusCode::BAD_REQUEST, "Bad Request"),
+            Self::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token"),
             Self::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found"),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error"),
         };
