@@ -1,4 +1,7 @@
-use crate::{error::{Error, ReportError}, utils::jwt};
+use crate::{
+    error::{Error, ReportError},
+    utils::jwt,
+};
 use axum::{async_trait, extract::FromRequestParts, http::request::Parts, TypedHeader};
 use chrono::{Duration, Utc};
 use error_stack::{IntoReport, ResultExt};

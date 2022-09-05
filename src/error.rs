@@ -14,7 +14,7 @@ pub enum Error {
     BcryptError,
     TokioRecvError,
     WrongCredentials,
-    SqlxError
+    SqlxError,
 }
 
 impl fmt::Display for Error {

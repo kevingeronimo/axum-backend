@@ -1,7 +1,7 @@
 use crate::dto::RegisterDto;
 use crate::error::{Error, Result};
 use crate::{dto::LoginDto, models::user::User, utils::bcrypt_hash};
-use error_stack::{IntoReport, ResultExt, report};
+use error_stack::{report, IntoReport, ResultExt};
 use sqlx::PgPool;
 
 pub struct AuthService;
@@ -21,7 +21,6 @@ impl AuthService {
     }
 
     pub async fn sign_up(dto: RegisterDto, pool: &PgPool) -> Result<User> {
-
         if User::get_by_username(&dto.username, pool).await.is_ok() {
             return Err(report!(Error::DuplicateUserName));
         }

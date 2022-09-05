@@ -7,9 +7,7 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use sqlx::PgPool;
-use tracing::instrument;
 
-#[instrument(skip_all)]
 pub async fn login(
     State(pool): State<PgPool>,
     Json(login_dto): Json<LoginDto>,
@@ -20,7 +18,6 @@ pub async fn login(
     Ok(Json(AuthBodyDto::new(token)))
 }
 
-#[instrument(skip_all)]
 pub async fn register(
     State(pool): State<PgPool>,
     Json(register_dto): Json<RegisterDto>,
