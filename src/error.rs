@@ -1,6 +1,7 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 use std::{error::Error as StdError, fmt};
+use tracing::{event, Level};
 
 pub type Result<T> = error_stack::Result<T, self::Error>;
 
@@ -34,5 +35,20 @@ impl IntoResponse for Error {
             _ => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error"),
         };
         (status, Json(json!({ "error": error_message }))).into_response()
+    }
+}
+
+pub struct ReportError(error_stack::Report<Error>);
+
+impl From<error_stack::Report<Error>> for ReportError {
+    fn from(report: error_stack::Report<Error>) -> Self {
+        ReportError(report)
+    }
+}
+
+impl IntoResponse for ReportError {
+    fn into_response(self) -> axum::response::Response {
+        event!(Level::ERROR, "{:?}", self.0);
+        self.0.current_context().into_response()
     }
 }

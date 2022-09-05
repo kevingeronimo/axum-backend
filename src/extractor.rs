@@ -1,10 +1,9 @@
-use crate::{error::Error, utils::jwt};
+use crate::{error::{Error, ReportError}, utils::jwt};
 use axum::{async_trait, extract::FromRequestParts, http::request::Parts, TypedHeader};
 use chrono::{Duration, Utc};
 use error_stack::{IntoReport, ResultExt};
 use headers::{authorization::Bearer, Authorization};
 use serde::{Deserialize, Serialize};
-use tracing::{event, Level};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Claims {
@@ -31,7 +30,7 @@ impl<S> FromRequestParts<S> for Claims
 where
     S: Send + Sync,
 {
-    type Rejection = Error;
+    type Rejection = ReportError;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header
@@ -39,17 +38,10 @@ where
             TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
                 .await
                 .report()
-                .change_context(Error::InvalidToken)
-                .map_err(|e| {
-                    event!(Level::ERROR, "{e:?}");
-                    *e.current_context()
-                })?;
+                .change_context(Error::InvalidToken)?;
 
         // Decode the user data
-        let claims = jwt::verify(bearer.token()).map_err(|e| {
-            event!(Level::ERROR, "{e:?}");
-            *e.current_context()
-        })?;
+        let claims = jwt::verify(bearer.token())?;
 
         Ok(claims)
     }
