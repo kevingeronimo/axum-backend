@@ -30,7 +30,7 @@ async fn main() -> Result<()> {
         .await
         .report()
         .change_context(Error::SqlxError)
-        .attach_printable("Unable to connect to database")?;
+        .attach_printable("unable to connect to database")?;
 
     let app = Router::with_state(pool)
         .route("/", get(|| async { "Hello, World!" }))

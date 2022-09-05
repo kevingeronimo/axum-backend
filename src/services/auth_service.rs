@@ -12,7 +12,7 @@ impl AuthService {
             .await
             .report()
             .change_context(Error::UserNotFound)
-            .attach_printable(format!("No user with username = \"{}\"", dto.username))?;
+            .attach_printable_lazy(|| format!("no user with username=\"{}\"", dto.username))?;
         if bcrypt_hash::verify_password(dto.password, user.password.to_owned()).await? {
             Ok(user)
         } else {
@@ -35,7 +35,7 @@ impl AuthService {
         User::create(dto, pool)
             .await
             .report()
-            .attach_printable("Fail to create new user")
+            .attach_printable("fail to create new user")
             .change_context(Error::SqlxError)
     }
 }

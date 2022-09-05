@@ -1,5 +1,5 @@
 use crate::{
-    error::{Error, ReportError},
+    error::{Error, ErrorStackReport},
     utils::jwt,
 };
 use axum::{async_trait, extract::FromRequestParts, http::request::Parts, TypedHeader};
@@ -33,7 +33,7 @@ impl<S> FromRequestParts<S> for Claims
 where
     S: Send + Sync,
 {
-    type Rejection = ReportError;
+    type Rejection = ErrorStackReport;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header

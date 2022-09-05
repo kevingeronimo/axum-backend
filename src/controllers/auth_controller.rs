@@ -11,7 +11,7 @@ use sqlx::PgPool;
 pub async fn login(
     State(pool): State<PgPool>,
     Json(login_dto): Json<LoginDto>,
-) -> Result<impl IntoResponse, error::ReportError> {
+) -> Result<impl IntoResponse, error::ErrorStackReport> {
     let user = AuthService::sign_in(login_dto, &pool).await?;
     let token = jwt::sign(user.id)?;
 
@@ -21,7 +21,7 @@ pub async fn login(
 pub async fn register(
     State(pool): State<PgPool>,
     Json(register_dto): Json<RegisterDto>,
-) -> Result<impl IntoResponse, error::ReportError> {
+) -> Result<impl IntoResponse, error::ErrorStackReport> {
     let user = AuthService::sign_up(register_dto, &pool).await?;
     let token = jwt::sign(user.id)?;
 

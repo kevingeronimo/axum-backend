@@ -1,4 +1,5 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
+use error_stack::Report;
 use serde_json::json;
 use std::{error::Error as StdError, fmt};
 use tracing::{event, Level};
@@ -19,7 +20,15 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("Error: {self:?}"))
+        let err_msg = match self {
+            Self::WrongCredentials => "wrong credentials",
+            Self::DuplicateUserName => "username already taken",
+            Self::InvalidToken => "invalid token",
+            Self::UserNotFound => "user not found",
+            _ => "internal server error",
+        };
+
+        f.write_str(err_msg)
     }
 }
 
@@ -27,26 +36,26 @@ impl StdError for Error {}
 
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
-        let (status, error_message) = match self {
-            Self::WrongCredentials => (StatusCode::UNAUTHORIZED, "Wrong credentials"),
-            Self::DuplicateUserName => (StatusCode::BAD_REQUEST, "Username already taken"),
-            Self::InvalidToken => (StatusCode::BAD_REQUEST, "Invalid token"),
-            Self::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found"),
-            _ => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error"),
+        let status = match self {
+            Self::WrongCredentials => StatusCode::UNAUTHORIZED,
+            Self::DuplicateUserName => StatusCode::BAD_REQUEST,
+            Self::InvalidToken => StatusCode::BAD_REQUEST,
+            Self::UserNotFound => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
-        (status, Json(json!({ "error": error_message }))).into_response()
+        (status, Json(json!({ "error": self.to_string() }))).into_response()
     }
 }
 
-pub struct ReportError(error_stack::Report<Error>);
+pub struct ErrorStackReport(Report<Error>);
 
-impl From<error_stack::Report<Error>> for ReportError {
-    fn from(report: error_stack::Report<Error>) -> Self {
-        ReportError(report)
+impl From<Report<Error>> for ErrorStackReport {
+    fn from(report: Report<Error>) -> Self {
+        ErrorStackReport(report)
     }
 }
 
-impl IntoResponse for ReportError {
+impl IntoResponse for ErrorStackReport {
     fn into_response(self) -> axum::response::Response {
         event!(Level::ERROR, "{:?}", self.0);
         self.0.current_context().into_response()

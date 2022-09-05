@@ -29,7 +29,8 @@ impl Keys {
 pub fn sign(id: i64) -> Result<String> {
     let token = jsonwebtoken::encode(&Header::default(), &Claims::new(id), &KEYS.encoding)
         .report()
-        .change_context(Error::TokenCreation)?;
+        .change_context(Error::TokenCreation)
+        .attach_printable("failed to encode token")?;
 
     Ok(token)
 }
@@ -39,7 +40,7 @@ pub fn verify(token: &str) -> Result<Claims> {
         .map(|data| data.claims)
         .report()
         .change_context(Error::InvalidToken)
-        .attach_printable("Failed to verify token")?;
+        .attach_printable("failed to decode token")?;
 
     Ok(claims)
 }
