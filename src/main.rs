@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
         .init();
 
     let db_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://user:pass@postgres_container/postgres".to_string());
+        .unwrap_or_else(|_| "postgres://user:pass@postgres/postgres".to_string());
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
