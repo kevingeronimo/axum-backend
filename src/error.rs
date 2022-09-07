@@ -2,7 +2,6 @@ use axum::{http::StatusCode, response::IntoResponse, Json};
 use error_stack::Report;
 use serde_json::json;
 use std::{error::Error as StdError, fmt};
-use tracing::{event, Level};
 
 pub type Result<T> = error_stack::Result<T, self::Error>;
 
@@ -57,7 +56,7 @@ impl From<Report<Error>> for ErrorStackReport {
 
 impl IntoResponse for ErrorStackReport {
     fn into_response(self) -> axum::response::Response {
-        event!(Level::ERROR, "{:?}", self.0);
+        tracing::error!("{:?}", self.0);
         self.0.current_context().into_response()
     }
 }

@@ -1,9 +1,7 @@
 use crate::{
-    dto::{AuthBodyDto, LoginDto, RegisterDto},
+    dto::{LoginDto, RegisterDto},
     error,
-    extractor::Claims,
     services::auth_service::AuthService,
-    utils::jwt,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use sqlx::PgPool;
@@ -13,9 +11,8 @@ pub async fn login(
     Json(login_dto): Json<LoginDto>,
 ) -> Result<impl IntoResponse, error::ErrorStackReport> {
     let user = AuthService::sign_in(login_dto, &pool).await?;
-    let token = jwt::sign(user.id)?;
 
-    Ok(Json(AuthBodyDto::new(token)))
+    Ok(Json(user))
 }
 
 pub async fn register(
@@ -23,15 +20,6 @@ pub async fn register(
     Json(register_dto): Json<RegisterDto>,
 ) -> Result<impl IntoResponse, error::ErrorStackReport> {
     let user = AuthService::sign_up(register_dto, &pool).await?;
-    let token = jwt::sign(user.id)?;
 
-    Ok((StatusCode::CREATED, Json(AuthBodyDto::new(token))))
-}
-
-pub async fn protected(claims: Claims) -> Result<String, error::Error> {
-    // Send the protected data to the user
-    Ok(format!(
-        "Welcome to the protected area :)\nYour data:\n{:?}",
-        claims
-    ))
+    Ok((StatusCode::CREATED, Json(user)))
 }

@@ -36,7 +36,6 @@ async fn main() -> Result<()> {
         .route("/", get(|| async { "Hello, World!" }))
         .route("/login", post(auth_controller::login))
         .route("/register", post(auth_controller::register))
-        .route("/protected", get(auth_controller::protected))
         .layer(TraceLayer::new_for_http());
 
     // run it with hyper on localhost:3000
