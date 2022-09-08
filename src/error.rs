@@ -5,11 +5,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("invalid credentials")]
+    Unauthorized,
+
     #[error("{0}")]
     Conflict(String),
-
-    #[error(transparent)]
-    Sqlx(#[from] sqlx::Error),
 
     #[error(transparent)]
     Other(#[from] anyhow::Error),
@@ -17,10 +17,21 @@ pub enum Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
-        let status = match self {
-            Self::Conflict(_) => StatusCode::CONFLICT,
-            Self::Sqlx(_) | Self::Other(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        let (status, msg) = match self {
+            Self::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
+            Self::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            Self::Other(ref root_cause) => {
+                tracing::error!("{:?}", root_cause);
+                match root_cause.downcast_ref::<sqlx::Error>() {
+                    Some(sqlx::Error::RowNotFound) => {
+                        (StatusCode::NOT_FOUND, root_cause.to_string())
+                    }
+                    Some(_) => (StatusCode::INTERNAL_SERVER_ERROR, root_cause.to_string()),
+                    None => (StatusCode::INTERNAL_SERVER_ERROR, root_cause.to_string()),
+                }
+            }
         };
-        (status, Json(json!({ "error": self.to_string() }))).into_response()
+
+        (status, Json(json!({ "error": msg }))).into_response()
     }
 }

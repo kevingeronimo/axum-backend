@@ -1,7 +1,7 @@
 use crate::dto::RegisterDto;
 use crate::error::{Error, Result};
 use crate::{dto::LoginDto, models::user::User, utils::bcrypt_hash};
-use anyhow::{Context, anyhow};
+use anyhow::Context;
 use sqlx::PgPool;
 
 pub struct AuthService;
@@ -10,18 +10,18 @@ impl AuthService {
     pub async fn sign_in(dto: LoginDto, pool: &PgPool) -> Result<User> {
         let user = User::get_by_username(&dto.username, pool)
             .await
-            .with_context(|| format!("no user with username=\"{}\"", dto.username))?;
+            .context("user not found")?;
 
         if bcrypt_hash::verify_password(dto.password, user.password.to_owned()).await? {
             Ok(user)
         } else {
-            Err(anyhow!("wrong password").into())
+            Err(Error::Unauthorized)
         }
-    }                    
+    }
 
     pub async fn sign_up(dto: RegisterDto, pool: &PgPool) -> Result<User> {
         if User::get_by_username(&dto.username, pool).await.is_ok() {
-            return Err(Error::Conflict("username already taken".to_string()));
+            return Err(Error::Conflict("username already taken".to_owned()));
         }
 
         // password is dropped after hashing.
@@ -31,6 +31,9 @@ impl AuthService {
             password,
         };
 
-        User::create(dto, pool).await.map_err(|e| e.into())
+        User::create(dto, pool)
+            .await
+            .context("failed to create user")
+            .map_err(|e| e.into())
     }
 }
