@@ -13,7 +13,6 @@ serde = "1.0.144"
 serde_json = "1.0.85"
 tracing = "0.1.36"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-error-stack = "0.1.1"
 tower-http = { version = "0.3.4", features = ["trace"] }
 bcrypt = "0.13.0"
 rayon = "1.5.3"
@@ -21,3 +20,5 @@ chrono = "0.4.22"
 jsonwebtoken = "8.1.1"
 once_cell = "1.14.0"
 headers = "0.3.8"
+thiserror = "1.0.34"
+anyhow = "1.0.64"

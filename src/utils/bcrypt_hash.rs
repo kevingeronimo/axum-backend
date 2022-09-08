@@ -1,25 +1,23 @@
-use crate::error::{Error, Result};
 use bcrypt::DEFAULT_COST;
-use error_stack::{IntoReport, ResultExt};
 
-pub async fn hash_password(password: String) -> Result<String> {
+pub async fn hash_password(password: String) -> anyhow::Result<String> {
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
-        let result = bcrypt::hash(password, DEFAULT_COST)
-            .report()
-            .change_context(Error::BcryptError);
+        let result = bcrypt::hash(password, DEFAULT_COST);
         let _ = send.send(result);
     });
-    recv.await.report().change_context(Error::TokioRecvError)?
+    recv.await
+        .map_err(|e| e.into())
+        .and_then(|result| result.map_err(|e| e.into()))
 }
 
-pub async fn verify_password(password: String, hash: String) -> Result<bool> {
+pub async fn verify_password(password: String, hash: String) -> anyhow::Result<bool> {
     let (send, recv) = tokio::sync::oneshot::channel();
     rayon::spawn(move || {
-        let result = bcrypt::verify(password, &hash)
-            .report()
-            .change_context(Error::BcryptError);
+        let result = bcrypt::verify(password, &hash);
         let _ = send.send(result);
     });
-    recv.await.report().change_context(Error::TokioRecvError)?
+    recv.await
+        .map_err(|e| e.into())
+        .and_then(|result| result.map_err(|e| e.into()))
 }

@@ -2,17 +2,16 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use error_stack::{IntoReport, ResultExt};
 use hearthstone_backend::{
     controllers::auth_controller,
-    error::{Error, Result},
 };
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use anyhow::Context;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
@@ -28,9 +27,7 @@ async fn main() -> Result<()> {
         .max_connections(5)
         .connect(&db_url)
         .await
-        .report()
-        .change_context(Error::SqlxError)
-        .attach_printable("unable to connect to database")?;
+        .context("unable to connect to database")?;
 
     let app = Router::with_state(pool)
         .route("/", get(|| async { "Hello, World!" }))
