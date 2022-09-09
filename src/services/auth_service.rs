@@ -1,7 +1,7 @@
 use crate::dto::RegisterDto;
 use crate::error::{Error, Result};
 use crate::{dto::LoginDto, models::user::User, utils::bcrypt_hash};
-use anyhow::Context;
+use anyhow::{Context, anyhow};
 use sqlx::PgPool;
 
 pub struct AuthService;
@@ -10,7 +10,12 @@ impl AuthService {
     pub async fn sign_in(dto: LoginDto, pool: &PgPool) -> Result<User> {
         let user = User::get_by_username(&dto.username, pool)
             .await
-            .context("invalid credentials")?;
+            .map_err(|e| {
+                match e {
+                    sqlx::Error::RowNotFound => Error::Unauthorized,
+                    _ => anyhow!(e).into(),
+                }
+            })?;
 
         if bcrypt_hash::verify_password(dto.password, user.password.to_owned()).await? {
             Ok(user)

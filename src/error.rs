@@ -11,7 +11,7 @@ pub enum Error {
     #[error("{0}")]
     Conflict(String),
 
-    #[error(transparent)]
+    #[error("{0:?}")]
     Other(#[from] anyhow::Error),
 }
 
@@ -19,18 +19,18 @@ impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let (status, msg) = match self {
             Self::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
-            Self::Conflict(msg) => (StatusCode::CONFLICT, msg),
+            Self::Conflict(ref msg) => (StatusCode::CONFLICT, msg.clone()),
             Self::Other(ref root_cause) => {
-                tracing::error!("{:?}", root_cause);
                 match root_cause.downcast_ref::<sqlx::Error>() {
                     Some(sqlx::Error::RowNotFound) => {
-                        (StatusCode::NOT_FOUND, root_cause.to_string())
+                        (StatusCode::NOT_FOUND, "not found".to_owned())
                     }
                     _ => (StatusCode::INTERNAL_SERVER_ERROR, "internal server error".to_owned()),
                 }
             }
         };
-
+        
+        tracing::error!("{}", self);
         (status, Json(json!({ "error": msg }))).into_response()
     }
 }
