@@ -10,7 +10,7 @@ impl AuthService {
     pub async fn sign_in(dto: LoginDto, pool: &PgPool) -> Result<User> {
         let user = User::get_by_username(&dto.username, pool)
             .await
-            .context("user not found")?;
+            .context("invalid credentials")?;
 
         if bcrypt_hash::verify_password(dto.password, user.password.to_owned()).await? {
             Ok(user)

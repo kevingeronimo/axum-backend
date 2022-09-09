@@ -26,8 +26,7 @@ impl IntoResponse for Error {
                     Some(sqlx::Error::RowNotFound) => {
                         (StatusCode::NOT_FOUND, root_cause.to_string())
                     }
-                    Some(_) => (StatusCode::INTERNAL_SERVER_ERROR, root_cause.to_string()),
-                    None => (StatusCode::INTERNAL_SERVER_ERROR, root_cause.to_string()),
+                    _ => (StatusCode::INTERNAL_SERVER_ERROR, "internal server error".to_owned()),
                 }
             }
         };
