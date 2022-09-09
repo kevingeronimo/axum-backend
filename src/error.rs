@@ -8,8 +8,8 @@ pub enum Error {
     #[error("invalid credentials")]
     Unauthorized,
 
-    #[error("{0}")]
-    Conflict(String),
+    #[error("username already exists")]
+    UsernameAlreadyExists,
 
     #[error("{0:?}")]
     Other(#[from] anyhow::Error),
@@ -19,7 +19,7 @@ impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         let (status, msg) = match self {
             Self::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
-            Self::Conflict(ref msg) => (StatusCode::CONFLICT, msg.clone()),
+            Self::UsernameAlreadyExists => (StatusCode::CONFLICT, self.to_string()),
             Self::Other(ref root_cause) => {
                 match root_cause.downcast_ref::<sqlx::Error>() {
                     Some(sqlx::Error::RowNotFound) => {

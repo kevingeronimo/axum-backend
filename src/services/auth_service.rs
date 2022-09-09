@@ -26,7 +26,7 @@ impl AuthService {
 
     pub async fn sign_up(dto: RegisterDto, pool: &PgPool) -> Result<User> {
         if User::get_by_username(&dto.username, pool).await.is_ok() {
-            return Err(Error::Conflict("username already taken".to_owned()));
+            return Err(Error::UsernameAlreadyExists);
         }
 
         // password is dropped after hashing.
