@@ -463,6 +463,7 @@ dependencies = [
  "anyhow",
  "axum",
  "bcrypt",
+ "pin-project",
  "rayon",
  "serde",
  "serde_json",

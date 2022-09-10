@@ -21,3 +21,4 @@ anyhow = "1.0.64"
 
 # middleware stuff
 tower = "0.4.1"
+pin-project = "1.0.12"
