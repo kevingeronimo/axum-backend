@@ -1,3 +1,4 @@
+use http::{request::Request, response::Response};
 use pin_project::pin_project;
 use std::task::{Context, Poll};
 use std::{future::Future, pin::Pin};
@@ -16,9 +17,9 @@ impl<S> SessionService<S> {
     }
 }
 
-impl<S, Request> Service<Request> for SessionService<S>
+impl<S, T, U> Service<Request<T>> for SessionService<S>
 where
-    S: Service<Request>,
+    S: Service<Request<T>, Response = Response<U>>,
     S::Error: Into<BoxError>,
 {
     type Response = S::Response;
@@ -29,9 +30,10 @@ where
         self.inner.poll_ready(cx).map_err(Into::into)
     }
 
-    fn call(&mut self, request: Request) -> Self::Future {
-        let response = self.inner.call(request);
+    fn call(&mut self, request: Request<T>) -> Self::Future {
+        let cookies = request.headers();
 
+        let response = self.inner.call(request);
         ResponseFuture { response }
     }
 }
@@ -52,12 +54,12 @@ pub struct ResponseFuture<F> {
     response: F,
 }
 
-impl<F, Response, Error> Future for ResponseFuture<F>
+impl<F, U, E> Future for ResponseFuture<F>
 where
-    F: Future<Output = Result<Response, Error>>,
-    Error: Into<BoxError>,
+    F: Future<Output = Result<Response<U>, E>>,
+    E: Into<BoxError>,
 {
-    type Output = Result<Response, BoxError>;
+    type Output = Result<Response<U>, BoxError>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.project();
