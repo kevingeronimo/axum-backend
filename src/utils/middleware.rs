@@ -1,22 +1,22 @@
 use pin_project::pin_project;
 use std::task::{Context, Poll};
 use std::{future::Future, pin::Pin};
-use tower::Service;
+use tower::{Layer, Service};
 
 type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 #[derive(Debug, Clone)]
-pub struct SessionLayer<S> {
+pub struct SessionService<S> {
     inner: S,
 }
 
-impl<S> SessionLayer<S> {
+impl<S> SessionService<S> {
     pub fn new(inner: S) -> Self {
         Self { inner }
     }
 }
 
-impl<S, Request> Service<Request> for SessionLayer<S>
+impl<S, Request> Service<Request> for SessionService<S>
 where
     S: Service<Request>,
     S::Error: Into<BoxError>,
@@ -33,6 +33,16 @@ where
         let response = self.inner.call(request);
 
         ResponseFuture { response }
+    }
+}
+
+pub struct SessionLayer;
+
+impl<S> Layer<S> for SessionLayer {
+    type Service = SessionService<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        SessionService { inner }
     }
 }
 
@@ -53,12 +63,7 @@ where
         let this = self.project();
 
         match this.response.poll(cx) {
-            Poll::Ready(Ok(res)) => {
-                
-
-                Poll::Ready(Ok(res))
-            }
-                
+            Poll::Ready(Ok(res)) => Poll::Ready(Ok(res)),
             Poll::Ready(Err(e)) => Poll::Ready(Err(e.into())),
             Poll::Pending => Poll::Pending,
         }
