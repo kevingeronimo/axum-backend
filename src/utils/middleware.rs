@@ -1,34 +1,32 @@
 use axum_extra::extract::cookie::Key;
 use axum_extra::extract::SignedCookieJar;
-use futures_util::ready;
 use http::{request::Request, response::Response};
-use pin_project::pin_project;
-use std::task::{Context, Poll};
-use std::{future::Future, pin::Pin};
+use std::{task::{Context, Poll}, pin::Pin, future::Future};
 use tower::{Layer, Service};
 
 // type BoxError = Box<dyn std::error::Error + Send + Sync>;
 const AXUM_SESSION_COOKIE_NAME: &str = "axum_session";
 
 #[derive(Clone)]
-pub struct SessionService<S> {
+pub struct SessionMiddleware<S> {
     inner: S,
     key: Key,
 }
 
-impl<S> SessionService<S> {
+impl<S> SessionMiddleware<S> {
     pub fn new(inner: S, key: Key) -> Self {
         Self { inner, key }
     }
 }
 
-impl<S, ReqBody, ResBody> Service<Request<ReqBody>> for SessionService<S>
+impl<S, ReqBody, ResBody> Service<Request<ReqBody>> for SessionMiddleware<S>
 where
-    S: Service<Request<ReqBody>, Response = Response<ResBody>>,
+    S: Service<Request<ReqBody>, Response = Response<ResBody>> + Clone + 'static,
+    ReqBody: 'static
 {
     type Response = S::Response;
     type Error = S::Error;
-    type Future = ResponseFuture<S::Future>;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         self.inner.poll_ready(cx)
@@ -41,8 +39,12 @@ where
             .get(AXUM_SESSION_COOKIE_NAME)
             .map(|cookie| cookie.value().to_owned());
 
-        let response = self.inner.call(request);
-        ResponseFuture { response }
+        let clone = self.inner.clone();
+        
+        let mut inner = std::mem::replace(&mut self.inner, clone);
+        Box::pin(async move {
+            inner.call(request).await
+        })
     }
 }
 
@@ -59,32 +61,12 @@ impl SessionLayer {
 }
 
 impl<S> Layer<S> for SessionLayer {
-    type Service = SessionService<S>;
+    type Service = SessionMiddleware<S>;
 
     fn layer(&self, inner: S) -> Self::Service {
-        SessionService {
+        SessionMiddleware {
             inner,
             key: self.key.clone(),
         }
-    }
-}
-
-#[pin_project]
-pub struct ResponseFuture<F> {
-    #[pin]
-    response: F,
-}
-
-impl<F, ResBody, E> Future for ResponseFuture<F>
-where
-    F: Future<Output = Result<Response<ResBody>, E>>,
-{
-    type Output = F::Output;
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
-        let res = ready!(this.response.poll(cx)?);
-
-        Poll::Ready(Ok(res))
     }
 }
