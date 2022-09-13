@@ -1,14 +1,13 @@
 use anyhow::Context;
 use async_redis_session::RedisSessionStore;
-use async_session::MemoryStore;
+
 use axum::{
-    extract::FromRef,
     routing::{get, post},
     Router,
 };
-use axum_extra::extract::cookie::Key;
+
 use hearthstone_backend::{controllers::auth_controller, utils::middleware::SessionLayer};
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 

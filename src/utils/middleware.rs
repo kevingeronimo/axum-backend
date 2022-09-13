@@ -56,13 +56,12 @@ where
                 let cookie_value = SignedCookieJar::new(layer.key)
                     .add(c)
                     .get(AXUM_SESSION_COOKIE_NAME)
-                    .map(|cookie| cookie.value().to_owned())
+                    .map(|cookie| cookie.to_string())
                     .unwrap();
 
                 response
                     .headers_mut()
                     .insert(SET_COOKIE, HeaderValue::from_str(&cookie_value).unwrap());
-                    
             } else {
                 tracing::error!("fail to retrieve cookie from session storage");
                 *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
