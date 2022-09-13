@@ -1,3 +1,4 @@
+use async_session::{SessionStore, MemoryStore};
 use axum_extra::extract::cookie::Key;
 use axum_extra::extract::SignedCookieJar;
 use futures::future::BoxFuture;
@@ -8,22 +9,17 @@ use tower::{Layer, Service};
 const AXUM_SESSION_COOKIE_NAME: &str = "axum_session";
 
 #[derive(Clone)]
-pub struct SessionMiddleware<S> {
+pub struct SessionMiddleware<S, Store: Clone> {
     inner: S,
-    key: Key,
+    layer: SessionLayer<Store>
 }
 
-impl<S> SessionMiddleware<S> {
-    pub fn new(inner: S, key: Key) -> Self {
-        Self { inner, key }
-    }
-}
-
-impl<S, ReqBody, ResBody> Service<Request<ReqBody>> for SessionMiddleware<S>
+impl<S, Store, ReqBody, ResBody> Service<Request<ReqBody>> for SessionMiddleware<S, Store>
 where
     S: Service<Request<ReqBody>, Response = Response<ResBody>> + Clone + Send + 'static,
     ReqBody: Send + 'static,
     S::Future: Send + 'static,
+    Store: SessionStore
 {
     type Response = S::Response;
     type Error = S::Error;
@@ -34,7 +30,8 @@ where
     }
 
     fn call(&mut self, request: Request<ReqBody>) -> Self::Future {
-        let jar = SignedCookieJar::from_headers(request.headers(), self.key.clone());
+        let layer = self.layer.clone();
+        let jar = SignedCookieJar::from_headers(request.headers(), layer.key.clone());
 
         let cookie = jar
             .get(AXUM_SESSION_COOKIE_NAME)
@@ -43,29 +40,40 @@ where
         let clone = self.inner.clone();
 
         let mut inner = std::mem::replace(&mut self.inner, clone);
-        Box::pin(async move { inner.call(request).await })
+        Box::pin(async move {
+            if let Some(cookie_value) = cookie {
+                let session = layer.store.load_session(cookie_value).await;
+            } else {
+                todo!()
+            };
+
+            inner.call(request).await 
+        })
     }
 }
 
-pub struct SessionLayer {
+#[derive(Clone)]
+pub struct SessionLayer<Store> {
+    store: Store,
     key: Key,
 }
 
-impl SessionLayer {
-    pub fn new(secret: &[u8]) -> Self {
+impl<Store> SessionLayer<Store> {
+    pub fn new(store: Store, secret: &[u8]) -> Self {
         Self {
+            store,
             key: Key::from(secret),
         }
     }
 }
 
-impl<S> Layer<S> for SessionLayer {
-    type Service = SessionMiddleware<S>;
+impl<S, Store: SessionStore> Layer<S> for SessionLayer<Store> {
+    type Service = SessionMiddleware<S, Store>;
 
     fn layer(&self, inner: S) -> Self::Service {
         SessionMiddleware {
             inner,
-            key: self.key.clone(),
+            layer: self.clone()
         }
     }
 }

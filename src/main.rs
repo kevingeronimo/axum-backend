@@ -1,4 +1,5 @@
 use anyhow::Context;
+use async_session::MemoryStore;
 use axum::{
     extract::FromRef,
     routing::{get, post},
@@ -30,13 +31,14 @@ async fn main() -> anyhow::Result<()> {
         .context("unable to connect to database")?;
 
     let state = AppState {pool, key: Key::generate()};
+    let mut store = MemoryStore::new();
 
     let app = Router::with_state(state.clone())
         .route("/", get(|| async { "Hello, World!" }))
         .route("/login", post(auth_controller::login))
         .route("/register", post(auth_controller::register))
         .layer(TraceLayer::new_for_http())
-        .layer(SessionLayer::new(b"secret"));
+        .layer(SessionLayer::new(store, b"secret"));
 
     // run it with hyper on localhost:3000
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
