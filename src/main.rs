@@ -1,4 +1,5 @@
 use anyhow::Context;
+use async_redis_session::RedisSessionStore;
 use async_session::MemoryStore;
 use axum::{
     extract::FromRef,
@@ -30,10 +31,9 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("unable to connect to database")?;
 
-    let state = AppState {pool, key: Key::generate()};
-    let mut store = MemoryStore::new();
+    let store = RedisSessionStore::new("redis://redis/")?;
 
-    let app = Router::with_state(state.clone())
+    let app = Router::with_state(pool)
         .route("/", get(|| async { "Hello, World!" }))
         .route("/login", post(auth_controller::login))
         .route("/register", post(auth_controller::register))
@@ -47,22 +47,4 @@ async fn main() -> anyhow::Result<()> {
         .unwrap();
 
     Ok(())
-}
-
-#[derive(Clone)]
-struct AppState {
-    pool: Pool<Postgres>,
-    key: Key,
-}
-
-impl FromRef<AppState> for Pool<Postgres> {
-    fn from_ref(app_state: &AppState) -> Pool<Postgres> {
-        app_state.pool.clone()
-    }
-}
-
-impl FromRef<AppState> for Key {
-    fn from_ref(app_state: &AppState) -> Key {
-        app_state.key.clone()
-    }
 }
