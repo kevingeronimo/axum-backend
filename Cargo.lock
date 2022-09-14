@@ -262,26 +262,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum-extra"
-version = "0.4.0-rc.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "090ae29ae83a40882fb99bce421d8dce4a819325a013bb301dad4cc4b74ab40c"
-dependencies = [
- "axum",
- "bytes",
- "cookie",
- "futures-util",
- "http",
- "mime",
- "pin-project-lite",
- "tokio",
- "tower",
- "tower-http",
- "tower-layer",
- "tower-service",
-]
-
-[[package]]
 name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -473,7 +453,6 @@ checksum = "94d4706de1b0fa5b132270cddffa8585166037822e260a944fe161acd137ca05"
 dependencies = [
  "base64",
  "hmac 0.12.1",
- "percent-encoding",
  "rand",
  "sha2 0.10.2",
  "subtle",
@@ -897,8 +876,8 @@ dependencies = [
  "async-redis-session",
  "async-session",
  "axum",
- "axum-extra",
  "bcrypt",
+ "cookie",
  "futures",
  "http",
  "rayon",

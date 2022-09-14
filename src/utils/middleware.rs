@@ -1,14 +1,8 @@
 use async_session::{Session, SessionStore};
-use axum_extra::extract::cookie::{Cookie, Key};
-use axum_extra::extract::SignedCookieJar;
 use futures::future::BoxFuture;
-use http::header::SET_COOKIE;
-use http::HeaderValue;
-use http::{request::Request, response::Response, StatusCode};
+use http::{header::COOKIE, request::Request, response::Response, HeaderValue};
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
-
-const AXUM_SESSION_COOKIE_NAME: &str = "axum_session";
 
 #[derive(Clone)]
 pub struct SessionMiddleware<S, Store: Clone> {
@@ -32,13 +26,39 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, mut request: Request<ReqBody>) -> Self::Future {
+    fn call(&mut self, request: Request<ReqBody>) -> Self::Future {
         let clone = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
+        let layer = self.layer.clone();
 
-        // TODO: stuff before response that don't need to be awaited
         Box::pin(async move {
-            // TODO: stuff before response
+            let cookie = request
+                .headers()
+                .get(COOKIE)
+                .map(HeaderValue::to_str)
+                .map(|result| {
+                    result.map(|cookies| {
+                        cookies
+                            .split(';')
+                            .filter(|cookie| cookie.contains("axum_session"))
+                            .map(|cookie| cookie.rsplit_once('='))
+                            .next()
+                    })
+                });
+
+            let session = if let Some(Ok(Some(Some((_, cookie_value))))) = cookie {
+                layer
+                    .store
+                    .load_session(cookie_value.to_string())
+                    .await
+                    .ok()
+                    .flatten()
+                    .and_then(Session::validate)
+                    .unwrap_or_default()
+            } else {
+                Session::new()
+            };
+
             let mut response = inner.call(request).await?;
             // TODO: stuff after response
             Ok(response)
@@ -49,17 +69,12 @@ where
 #[derive(Clone)]
 pub struct SessionLayer<Store> {
     store: Store,
-    key: Key,
 }
 
 impl<Store: SessionStore> SessionLayer<Store> {
     pub fn new(store: Store, _: &[u8]) -> Self {
-        Self {
-            store,
-            key: Key::generate(),
-        }
+        Self { store }
     }
-
 }
 
 impl<S, Store: SessionStore> Layer<S> for SessionLayer<Store> {
