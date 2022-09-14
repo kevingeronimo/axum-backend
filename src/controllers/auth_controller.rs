@@ -30,3 +30,15 @@ pub async fn register(
 
     Ok((StatusCode::CREATED, Json(user)))
 }
+
+pub async fn protected(
+    Extension(session): Extension<Session>,
+) -> Result<impl IntoResponse, error::Error> {
+    let username = session.get::<String>("username").unwrap();
+
+    Ok((
+        StatusCode::OK,
+        Extension(session),
+        format!("welcome! {username}"),
+    ))
+}

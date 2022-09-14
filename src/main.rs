@@ -37,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/login", post(auth_controller::login))
         .route("/register", post(auth_controller::register))
         .layer(TraceLayer::new_for_http())
-        .layer(SessionLayer::new(store, b"secret"));
+        .layer(SessionLayer::new(store, b"hello :)"));
 
     // run it with hyper on localhost:3000
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
