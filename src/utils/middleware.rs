@@ -1,6 +1,12 @@
 use async_session::{Session, SessionStore};
+use cookie::Cookie;
 use futures::future::BoxFuture;
-use http::{header::{COOKIE, SET_COOKIE}, request::Request, response::Response, HeaderValue};
+use http::{
+    header::{COOKIE, SET_COOKIE},
+    request::Request,
+    response::Response,
+    HeaderValue,
+};
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
 
@@ -41,15 +47,17 @@ where
                         cookies
                             .split(';')
                             .filter(|cookie| cookie.contains("axum_session"))
-                            .map(|cookie| cookie.rsplit_once('='))
+                            .map(Cookie::parse)
                             .next()
                     })
                 });
 
-            let session = if let Some(Ok(Some(Some((_, cookie_value))))) = cookie {
+            let session = if let Some(Ok(Some(Ok(cookie)))) = cookie {
+                tracing::warn!("{cookie}");
+                tracing::warn!("{cookie:?}");
                 layer
                     .store
-                    .load_session(cookie_value.to_string())
+                    .load_session(cookie.value().to_string())
                     .await
                     .ok()
                     .flatten()
@@ -75,9 +83,15 @@ where
 
                 if let Some(cookie_value) = layer.store.store_session(session).await.ok().flatten()
                 {
+                    let cookie = Cookie::build("axum_session", cookie_value)
+                        .http_only(true)
+                        .finish();
+
+                    tracing::warn!("{cookie}");
+
                     response.headers_mut().insert(
                         SET_COOKIE,
-                        HeaderValue::from_str(&cookie_value).unwrap(),
+                        HeaderValue::from_str(&cookie.to_string()).unwrap(),
                     );
                 }
             };

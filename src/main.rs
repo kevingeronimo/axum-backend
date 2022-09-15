@@ -36,6 +36,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/", get(|| async { "Hello, World!" }))
         .route("/login", post(auth_controller::login))
         .route("/register", post(auth_controller::register))
+        .route("/protected", get(auth_controller::protected))
         .layer(TraceLayer::new_for_http())
         .layer(SessionLayer::new(store, b"hello :)"));
 

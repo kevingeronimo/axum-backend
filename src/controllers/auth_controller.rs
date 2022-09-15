@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     dto::{LoginDto, RegisterDto},
     error,
@@ -34,11 +36,11 @@ pub async fn register(
 pub async fn protected(
     Extension(session): Extension<Session>,
 ) -> Result<impl IntoResponse, error::Error> {
-    let username = session.get::<String>("username").unwrap();
+    let sessionc = format!("{session:?}");
 
     Ok((
         StatusCode::OK,
         Extension(session),
-        format!("welcome! {username}"),
+        format!("welcome! {:?}", sessionc),
     ))
 }
