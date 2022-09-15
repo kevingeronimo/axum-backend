@@ -1,6 +1,6 @@
 use async_session::{Session, SessionStore};
 use futures::future::BoxFuture;
-use http::{header::COOKIE, request::Request, response::Response, HeaderValue};
+use http::{header::{COOKIE, SET_COOKIE}, request::Request, response::Response, HeaderValue};
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
 
@@ -26,7 +26,7 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, request: Request<ReqBody>) -> Self::Future {
+    fn call(&mut self, mut request: Request<ReqBody>) -> Self::Future {
         let clone = self.inner.clone();
         let mut inner = std::mem::replace(&mut self.inner, clone);
         let layer = self.layer.clone();
@@ -59,7 +59,29 @@ where
                 Session::new()
             };
 
+            // Pass the session over to the controller/handler via request extension.
+            request.extensions_mut().insert(session);
+
             let mut response = inner.call(request).await?;
+
+            // Read the session from the response.
+            let session = response.extensions().get::<Session>();
+
+            if let Some(session) = session {
+                // The SessionStore wants ownership of the Session.
+                let mut session = session.clone();
+                // Cloning a Session does not clone the cookie_value so...
+                session.regenerate();
+
+                if let Some(cookie_value) = layer.store.store_session(session).await.ok().flatten()
+                {
+                    response.headers_mut().insert(
+                        SET_COOKIE,
+                        HeaderValue::from_str(&cookie_value).unwrap(),
+                    );
+                }
+            };
+
             // TODO: stuff after response
             Ok(response)
         })
