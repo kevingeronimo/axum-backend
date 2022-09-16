@@ -10,6 +10,8 @@ use http::{
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
 
+use crate::utils;
+
 #[derive(Clone)]
 pub struct SessionMiddleware<S, Store: Clone> {
     inner: S,
@@ -19,7 +21,7 @@ pub struct SessionMiddleware<S, Store: Clone> {
 impl<S, Store, ReqBody, ResBody> Service<Request<ReqBody>> for SessionMiddleware<S, Store>
 where
     S: Service<Request<ReqBody>, Response = Response<ResBody>> + Clone + Send + 'static,
-    ReqBody: Send + 'static,
+    ReqBody: Send + Sync + 'static,
     ResBody: Send + 'static,
     S::Future: Send + 'static,
     Store: SessionStore,
@@ -38,34 +40,9 @@ where
         let layer = self.layer.clone();
 
         Box::pin(async move {
-            let cookie = request
-                .headers()
-                .get(COOKIE)
-                .map(HeaderValue::to_str)
-                .map(|result| {
-                    result.map(|cookies| {
-                        cookies
-                            .split(';')
-                            .filter(|cookie| cookie.contains("axum_session"))
-                            .map(Cookie::parse)
-                            .next()
-                    })
-                });
+            let cookie = utils::parse_cookie(&request, "axum_session");
 
-            let session = if let Some(Ok(Some(Ok(cookie)))) = cookie {
-                tracing::warn!("{cookie}");
-                tracing::warn!("{cookie:?}");
-                layer
-                    .store
-                    .load_session(cookie.value().to_string())
-                    .await
-                    .ok()
-                    .flatten()
-                    .and_then(Session::validate)
-                    .unwrap_or_default()
-            } else {
-                Session::new()
-            };
+            let session = layer.load_or_create_session(&cookie).await;
 
             // Pass the session over to the controller/handler via request extension.
             request.extensions_mut().insert(session);
@@ -110,6 +87,20 @@ pub struct SessionLayer<Store> {
 impl<Store: SessionStore> SessionLayer<Store> {
     pub fn new(store: Store, _: &[u8]) -> Self {
         Self { store }
+    }
+
+    pub async fn load_or_create_session(&self, cookie: &Option<Cookie<'_>>) -> Session {
+        if let Some(cookie) = cookie {
+            self.store
+                .load_session(cookie.value().to_owned())
+                .await
+                .ok()
+                .flatten()
+                .and_then(Session::validate)
+                .unwrap_or_default()
+        } else {
+            Session::new()
+        }
     }
 }
 
