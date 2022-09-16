@@ -246,6 +246,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-backend"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-redis-session",
+ "async-session",
+ "axum",
+ "bcrypt",
+ "cookie",
+ "futures",
+ "http",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "axum-core"
 version = "0.3.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -866,30 +890,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7f66481bfee273957b1f20485a4ff3362987f85b2c236580d81b4eb7a326429"
 dependencies = [
  "http",
-]
-
-[[package]]
-name = "hearthstone-backend"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-redis-session",
- "async-session",
- "axum",
- "bcrypt",
- "cookie",
- "futures",
- "http",
- "rayon",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]

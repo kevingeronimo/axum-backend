@@ -6,7 +6,7 @@ use axum::{
     Router,
 };
 
-use hearthstone_backend::{controllers::auth_controller, utils::middleware::SessionLayer};
+use axum_backend::{controllers::auth_controller, utils::middleware::SessionLayer};
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "hearthstone_backend=debug,tower_http=debug".into()),
+                .unwrap_or_else(|_| "axum_backend=debug,tower_http=debug".into()),
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();
