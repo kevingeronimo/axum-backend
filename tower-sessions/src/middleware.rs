@@ -1,12 +1,7 @@
 use async_session::{Session, SessionStore};
 use cookie::Cookie;
 use futures::future::BoxFuture;
-use http::{
-    header::{COOKIE, SET_COOKIE},
-    request::Request,
-    response::Response,
-    HeaderValue,
-};
+use http::{header::SET_COOKIE, request::Request, response::Response, HeaderValue};
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
 
@@ -43,6 +38,7 @@ where
             let cookie = utils::parse_cookie(&request, "axum_session");
 
             let session = layer.load_or_create_session(&cookie).await;
+            let session_copy = layer.load_or_create_session(&cookie).await;
 
             // Pass the session over to the controller/handler via request extension.
             request.extensions_mut().insert(session);
@@ -60,6 +56,10 @@ where
 
                 if let Some(cookie_value) = layer.store.store_session(session).await.ok().flatten()
                 {
+                    if layer.store.destroy_session(session_copy).await.is_ok() {
+                        tracing::warn!("Old session deleted")
+                    }
+
                     let cookie = Cookie::build("axum_session", cookie_value)
                         .http_only(true)
                         .finish();
@@ -89,7 +89,7 @@ impl<Store: SessionStore> SessionLayer<Store> {
         Self { store }
     }
 
-    pub async fn load_or_create_session(&self, cookie: &Option<Cookie<'_>>) -> Session {
+    async fn load_or_create_session(&self, cookie: &Option<Cookie<'_>>) -> Session {
         if let Some(cookie) = cookie {
             self.store
                 .load_session(cookie.value().to_owned())
