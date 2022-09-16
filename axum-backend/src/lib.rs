@@ -9,7 +9,6 @@ pub mod models {
 }
 pub mod utils {
     pub mod bcrypt_hash;
-    pub mod middleware;
 }
 pub mod dto;
 pub mod error;

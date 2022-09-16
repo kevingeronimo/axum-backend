@@ -1,0 +1,15 @@
+[package]
+name = "tower-sessions"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tower = "0.4.1"
+http = "0.2.8"
+futures = "0.3.24"
+async-session = "3.0.0"
+async-redis-session = "0.2.2"
+cookie = {version = "0.16.0", features = ["signed"]}
+tracing = "0.1.36"

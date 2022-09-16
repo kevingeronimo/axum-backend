@@ -1,12 +1,10 @@
-use std::time::Duration;
-
 use crate::{
     dto::{LoginDto, RegisterDto},
     error,
     services::auth_service::AuthService,
 };
 use anyhow::Context;
-use async_session::Session;
+use tower_sessions::Session;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Extension, Json};
 use sqlx::PgPool;
 

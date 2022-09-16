@@ -1,12 +1,12 @@
 use anyhow::Context;
-use async_redis_session::RedisSessionStore;
+use tower_sessions::{RedisSessionStore, SessionLayer};
 
 use axum::{
     routing::{get, post},
     Router,
 };
 
-use axum_backend::{controllers::auth_controller, utils::middleware::SessionLayer};
+use axum_backend::controllers::auth_controller;
 use sqlx::postgres::PgPoolOptions;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
