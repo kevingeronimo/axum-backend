@@ -1,1 +1,1 @@
-# hearthstone-backend
+# axum-backend
